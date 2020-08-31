@@ -54,8 +54,8 @@ monofon_USB_sk6812.bin \
 all: monofon_USB_sk6812.elf secondary-outputs
 
 # Tool invocations
-monofon_USB_sk6812.elf: $(OBJS) $(USER_OBJS) C:\Users\Yac_not\Desktop\usb-i2s-4(sk6812)\STM32F401RETX_FLASH.ld
-	arm-none-eabi-gcc -o "monofon_USB_sk6812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Yac_not\Desktop\usb-i2s-4(sk6812)\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="monofon_USB_sk6812.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+monofon_USB_sk6812.elf: $(OBJS) $(USER_OBJS) C:\Users\turum\GoogleDrive\Monofon\monofone_401_sk6812\STM32F401RETX_FLASH.ld
+	arm-none-eabi-gcc -o "monofon_USB_sk6812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\turum\GoogleDrive\Monofon\monofone_401_sk6812\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="monofon_USB_sk6812.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

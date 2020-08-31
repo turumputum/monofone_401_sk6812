@@ -20,12 +20,6 @@ RM := rm -rf
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(strip $(S_DEPS)),)
--include $(S_DEPS)
-endif
-ifneq ($(strip $(S_UPPER_DEPS)),)
--include $(S_UPPER_DEPS)
-endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
 endif
@@ -54,8 +48,8 @@ monofon_USB_sk6812.bin \
 all: monofon_USB_sk6812.elf secondary-outputs
 
 # Tool invocations
-monofon_USB_sk6812.elf: $(OBJS) $(USER_OBJS) C:\Users\Yac_not\Desktop\usb-i2s-4(sk6812)\STM32F401RETX_FLASH.ld
-	arm-none-eabi-gcc -o "monofon_USB_sk6812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Yac_not\Desktop\usb-i2s-4(sk6812)\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="monofon_USB_sk6812.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+monofon_USB_sk6812.elf: $(OBJS) $(USER_OBJS) C:\Users\turum\GoogleDrive\Monofon\monofone_401_sk6812\STM32F401RETX_FLASH.ld
+	arm-none-eabi-gcc -o "monofon_USB_sk6812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\turum\GoogleDrive\Monofon\monofone_401_sk6812\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="monofon_USB_sk6812.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

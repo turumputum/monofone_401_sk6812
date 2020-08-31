@@ -16,24 +16,10 @@
 //--------------------------------------------------
 void ws2812_init(void);
 void ws2812_pixel_rgb_to_buf_dma(uint8_t Rpixel , uint8_t Gpixel, uint8_t Bpixel, uint16_t posX);
-void ws2812_prepareValue (uint8_t r00, uint8_t g00, uint8_t b00,
-    uint8_t r01, uint8_t g01, uint8_t b01,
-    uint8_t r02, uint8_t g02, uint8_t b02,
-    uint8_t r03, uint8_t g03, uint8_t b03,
-    uint8_t r04, uint8_t g04, uint8_t b04,
-    uint8_t r05, uint8_t g05, uint8_t b05,
-    uint8_t r06, uint8_t g06, uint8_t b06,
-    uint8_t r07, uint8_t g07, uint8_t b07,
-    uint8_t r08, uint8_t g08, uint8_t b08,
-    uint8_t r09, uint8_t g09, uint8_t b09,
-    uint8_t r10, uint8_t g10, uint8_t b10,
-    uint8_t r11, uint8_t g11, uint8_t b11);
 void ws2812_setValue(void);
 void ws2812_light(void);
-void ws2812_test01(void);
-void ws2812_test02(void);
-void ws2812_test03(void);
-void ws2812_test04(uint8_t col);
-void ws2812_test05(void);
+void ws2812_clearBuf();
+void ws2812_setPixel_gammaCorrection(uint8_t Rpixel , uint8_t Gpixel, uint8_t Bpixel, uint16_t pos);
+
 //--------------------------------------------------
 #endif /* WS2812_H_ */
