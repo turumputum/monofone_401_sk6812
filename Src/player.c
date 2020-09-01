@@ -81,72 +81,7 @@ void init() {
 		printf("f_closedir() failed, res = %d\r\n", res);
 		return;
 	}
-	/*
-	 printf("Writing to log.txt...\r\n");
 
-	 char writeBuff[128];
-	 snprintf(writeBuff, sizeof(writeBuff),
-	 "Total blocks: %lu (%lu Mb); Free blocks: %lu (%lu Mb)\r\n",
-	 totalBlocks, totalBlocks / 2000,
-	 freeBlocks, freeBlocks / 2000);
-
-	 FIL logFile;
-	 res = f_open(&logFile, "log.txt", FA_OPEN_APPEND | FA_WRITE);
-	 if(res != FR_OK) {
-	 printf("f_open() failed, res = %d\r\n", res);
-	 return;
-	 }
-
-	 unsigned int bytesToWrite = strlen(writeBuff);
-	 unsigned int bytesWritten;
-	 res = f_write(&logFile, writeBuff, bytesToWrite, &bytesWritten);
-	 if(res != FR_OK) {
-	 printf("f_write() failed, res = %d\r\n", res);
-	 return;
-	 }
-
-	 if(bytesWritten < bytesToWrite) {
-	 printf("WARNING! Disk is full.\r\n");
-	 }
-
-	 res = f_close(&logFile);
-	 if(res != FR_OK) {
-	 printf("f_close() failed, res = %d\r\n", res);
-	 return;
-	 }
-
-	 printf("Reading file...\r\n");
-	 FIL msgFile;
-	 res = f_open(&msgFile, "log.txt", FA_READ);
-	 if(res != FR_OK) {
-	 printf("f_open() failed, res = %d\r\n", res);
-	 return;
-	 }
-
-	 char readBuff[128];
-	 unsigned int bytesRead;
-	 res = f_read(&msgFile, readBuff, sizeof(readBuff)-1, &bytesRead);
-	 if(res != FR_OK) {
-	 printf("f_read() failed, res = %d\r\n", res);
-	 return;
-	 }
-
-	 readBuff[bytesRead] = '\0';
-	 printf("```\r\n%s\r\n```\r\n", readBuff);
-
-	 res = f_close(&msgFile);
-	 if(res != FR_OK) {
-	 printf("f_close() failed, res = %d\r\n", res);
-	 return;
-	 }
-	 */
-	// Unmount
-	/*    res = f_mount(NULL, "", 0);
-	 if(res != FR_OK) {
-	 printf("Unmount failed, res = %d\r\n", res);
-	 return;
-	 }
-	 */
 	printf("Done!\r\n");
 }
 
@@ -164,42 +99,28 @@ void player() {
 	FILINFO fno; /* File information */
 
 	fr = f_findfirst(&dj, &fno, "", "*.wav"); /* Start to search for photo files */
-	printf("found %s\n", fno.fname);
 
-	printf("Start loop\n");
+	if (fno.fsize < 1) {
+		printf("file not found %s\n", fno.fname);
+		HAL_Delay(1000);
+	} else {
+		printf("found %s\n", fno.fname);
 
-	while (1) {
+		printf("Start loop\n");
 
-		playWavFile(fno.fname);
+		while (1) {
 
+			playWavFile(fno.fname);
+
+		}
 	}
-	/*	while(1);
-	 res = f_open(&wavfile, "kickstarter.wav", FA_READ);
-	 if(res != FR_OK) {
-	 printf("f_open() failed, res = %d\r\n", res);
-	 return;
-	 }
-	 char readBuff[256];
-	 unsigned int bytesRead;
-	 do
-	 {
-	 res = f_read(&wavfile, readBuff, sizeof(readBuff), &bytesRead);
-	 if(res != FR_OK) {
-	 printf("f_read() failed, res = %d\r\n", res);
-	 return;
-	 }
-	 HAL_I2S_Transmit(&hi2s2,(uint16_t*)readBuff,128,1000);
-	 //HAL_I2S_Transmit_DMA(&hi2s2,(uint16_t*)readBuff,2048);
-	 } while(bytesRead>0);
 
-
-	 while(1);
-	 */
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
-	if (end_of_file_reached)
+	if (end_of_file_reached) {
 		return;
+	}
 
 	volatile uint16_t *temp = signal_play_buff;
 	signal_play_buff = signal_read_buff;
@@ -221,49 +142,75 @@ int playWavFile(const char *fname) {
 
 	printf("File opened, reading...\r\n");
 
+	//-------------------------Read RIFF Header-------------------------
 	unsigned int bytesRead;
-	uint8_t header[44];
-	res = f_read(&file, header, sizeof(header), &bytesRead);
+	uint8_t riff_header[12];
+	res = f_read(&file, riff_header, sizeof(riff_header), &bytesRead);
 	if (res != FR_OK) {
 		printf("f_read() failed, res = %d\r\n", res);
-		f_close(&file);
-		return -2;
+		//f_close(&file);
+		//return -2;
 	}
 
-	if (memcmp((const char*) header, "RIFF", 4) != 0) {
+	if (memcmp((const char*) riff_header, "RIFF", 4) != 0) {
 		printf("Wrong WAV signature at offset 0: "
-				"0x%02X 0x%02X 0x%02X 0x%02X\r\n", header[0], header[1],
-				header[2], header[3]);
-		f_close(&file);
-		return -3;
+				"0x%02X 0x%02X 0x%02X 0x%02X\r\n", riff_header[0],
+				riff_header[1], riff_header[2], riff_header[3]);
+		//f_close(&file);
+		//return -3;
 	}
-
-	if (memcmp((const char*) header + 8, "WAVEfmt ", 8) != 0) {
-		printf("Wrong WAV signature at offset 8!\r\n");
-		f_close(&file);
-		return -4;
-	}
-	if (memcmp((const char*) header + 36, "data", 4) != 0) {
-		printf("Wrong WAV signature at offset 36!\r\n");
-		f_close(&file);
-		return -5;
-	}
-
 	uint32_t fileSize = 8
-			+ (header[4] | (header[5] << 8) | (header[6] << 16)
-					| (header[7] << 24));
-	uint32_t headerSizeLeft = header[16] | (header[17] << 8)
-			| (header[18] << 16) | (header[19] << 24);
-	uint16_t compression = header[20] | (header[21] << 8);
-	uint16_t channelsNum = header[22] | (header[23] << 8);
-	uint32_t sampleRate = header[24] | (header[25] << 8) | (header[26] << 16)
-			| (header[27] << 24);
-	uint32_t bytesPerSecond = header[28] | (header[29] << 8)
-			| (header[30] << 16) | (header[31] << 24);
-	uint16_t bytesPerSample = header[32] | (header[33] << 8);
-	uint16_t bitsPerSamplePerChannel = header[34] | (header[35] << 8);
-	uint32_t dataSize = header[40] | (header[41] << 8) | (header[42] << 16)
-			| (header[43] << 24);
+			+ (riff_header[4] | (riff_header[5] << 8) | (riff_header[6] << 16)
+					| (riff_header[7] << 24));
+
+	//-------------------------Read fmt Header-------------------------
+	uint8_t fmt_header[24];
+	res = f_read(&file, fmt_header, sizeof(fmt_header), &bytesRead);
+	if (res != FR_OK) {
+		printf("f_read() failed, res = %d\r\n", res);
+		//f_close(&file);
+		//return -2;
+	}
+
+	if (memcmp((const char*) fmt_header, "fmt ", 4) != 0) {
+		printf("Wrong WAV signature at offset 8!\r\n");
+		//f_close(&file);
+		//return -4;
+	}
+
+	uint32_t headerSizeLeft = fmt_header[4] | (fmt_header[5] << 8)
+			| (fmt_header[6] << 16) | (fmt_header[7] << 24);
+	uint16_t compression = fmt_header[8] | (fmt_header[9] << 8);
+	uint16_t channelsNum = fmt_header[10] | (fmt_header[11] << 8);
+	uint32_t sampleRate = fmt_header[12] | (fmt_header[13] << 8)
+			| (fmt_header[14] << 16) | (fmt_header[15] << 24);
+	uint32_t bytesPerSecond = fmt_header[16] | (fmt_header[17] << 8)
+			| (fmt_header[18] << 16) | (fmt_header[19] << 24);
+	uint16_t bytesPerSample = fmt_header[22] | (fmt_header[23] << 8);
+
+	//-------------------------finde and Read data Header-------------------------
+	uint8_t data_header[8];
+	uint32_t dataSize;
+
+	for (int i = 1; i < 6; i++) {
+		res = f_read(&file, data_header, sizeof(data_header), &bytesRead);
+		if (res != FR_OK) {
+			printf("f_read() failed, res = %d\r\n", res);
+			//f_close(&file);
+			//return -2;
+		}
+
+		dataSize = data_header[4] | (data_header[5] << 8)
+				| (data_header[6] << 16) | (data_header[7] << 24);
+
+		if (memcmp((const char*) data_header, "data", 4) != 0) {
+			f_read(&file, data_header, dataSize, &bytesRead);
+			//dataSize = fileSize - 8 - 24 - (8 * i);
+		} else {
+			break;
+
+		}
+	}
 
 	printf("--- WAV header ---\r\n"
 			"File size: %lu\r\n"
@@ -273,36 +220,36 @@ int playWavFile(const char *fname) {
 			"Sample rate: %ld\r\n"
 			"Bytes per second: %ld\r\n"
 			"Bytes per sample: %d\r\n"
-			"Bits per sample per channel: %d\r\n"
 			"Data size: %ld\r\n"
 			"------------------\r\n", fileSize, headerSizeLeft, compression,
-			channelsNum, sampleRate, bytesPerSecond, bytesPerSample,
-			bitsPerSamplePerChannel, dataSize);
+			channelsNum, sampleRate, bytesPerSecond, bytesPerSample, dataSize);
 
 	if (headerSizeLeft != 16) {
 		printf("Wrong `headerSizeLeft` value, 16 expected\r\n");
-		f_close(&file);
-		return -6;
+		//f_close(&file);
+		//return -6;
 	}
 
 	if (compression != 1) {
 		printf("Wrong `compression` value, 1 expected\r\n");
-		f_close(&file);
-		return -7;
+		//f_close(&file);
+		//return -7;
 	}
 
 	if (channelsNum != 2) {
 		printf("Wrong `channelsNum` value, 2 expected\r\n");
-		f_close(&file);
-		return -8;
+		//f_close(&file);
+		//return -8;
 	}
 
-	if ((sampleRate != 48000) || (bytesPerSample != 4)
-			|| (bitsPerSamplePerChannel != 16)
+	if ((sampleRate != 48000) || (bytesPerSample != 16)
 			|| (bytesPerSecond != 48000 * 2 * 2)
 			|| (dataSize < sizeof(signal_buff1) + sizeof(signal_buff2))) {
-		printf("Wrong file format, 16 bit file with sample "
-				"rate 48000 expected\r\n");
+		char tmp[] =
+				"Wrong file format! 16 bytesPerSample, stereo, with sample rate 48000Hz expected\r\n";
+
+		printf(tmp);
+		writeErrorTxt(tmp, strlen(tmp));
 		//   f_close(&file);
 		//   return -9;
 	}
@@ -338,8 +285,6 @@ int playWavFile(const char *fname) {
 		return -12;
 	}
 
-
-
 	while (dataSize >= sizeof(signal_buff1)) {
 
 		if (!read_next_chunk) {
@@ -369,4 +314,31 @@ int playWavFile(const char *fname) {
 	}
 
 	return 0;
+}
+
+void writeErrorTxt(char *buff, int len) {
+
+	FRESULT fr;
+	FIL errFile;
+	fr = f_open(&errFile, "error.txt", FA_CREATE_ALWAYS | FA_WRITE);
+	if (fr != FR_OK) {
+		printf("f_open() failed, res = %d\r\n", fr);
+		return;
+	}
+
+	char writeBuff[len];
+	snprintf(writeBuff, sizeof(writeBuff), buff);
+	unsigned int bytesWritten;
+	fr = f_write(&errFile, writeBuff, strlen(writeBuff), &bytesWritten);
+	if (fr != FR_OK) {
+		printf("f_write() failed, res = %d\r\n", fr);
+		return;
+	}
+
+	fr = f_close(&errFile);
+	if (fr != FR_OK) {
+		printf("f_close() failed, res = %d\r\n", fr);
+		return;
+	}
+
 }

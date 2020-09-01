@@ -14,12 +14,29 @@
 //--------------------------------------------------
 #define BitIsSet(reg, bit) ((reg & (1<<bit)) != 0)
 //--------------------------------------------------
+
+
+typedef struct RgbColor {
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+} RgbColor;
+
+typedef struct HsvColor {
+	unsigned char h;
+	unsigned char s;
+	unsigned char v;
+} HsvColor;
+
+
 void ws2812_init(void);
 void ws2812_pixel_rgb_to_buf_dma(uint8_t Rpixel , uint8_t Gpixel, uint8_t Bpixel, uint16_t posX);
 void ws2812_setValue(void);
 void ws2812_light(void);
 void ws2812_clearBuf();
 void ws2812_setPixel_gammaCorrection(uint8_t Rpixel , uint8_t Gpixel, uint8_t Bpixel, uint16_t pos);
+HsvColor RgbToHsv(RgbColor rgb);
+RgbColor HsvToRgb(HsvColor hsv);
 
 //--------------------------------------------------
 #endif /* WS2812_H_ */
