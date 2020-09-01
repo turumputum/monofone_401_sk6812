@@ -17,3 +17,6 @@
 
 
 void init();
+void end();
+int playWavFile(const char *fname);
+void player();
