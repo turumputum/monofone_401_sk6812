@@ -80,6 +80,7 @@ return len;
 }
 
 
+/*
 int _write ( int file, char *ptr, int len )
 {
   int i = 0;
@@ -87,8 +88,10 @@ int _write ( int file, char *ptr, int len )
     ITM_SendChar ( *ptr++ );
   return len;
 }
+*/
 
-/*
+
+
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
 	int DataIdx;
@@ -100,7 +103,7 @@ __attribute__((weak)) int _write(int file, char *ptr, int len)
 	return len;
 }
 
-*/
+
 
 int _close(int file)
 {

@@ -24,6 +24,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <math.h>
+#include "player.h"
 #include "audioplay.h"
 #include "ws2812.h"
 
@@ -114,7 +117,7 @@ uint8_t HID_Buffer[8];
 
 extern uint16_t BUF_DMA[ARRAY_LEN];
 
-int ledRefresh=1;
+int ledRefresh = 1;
 
 int effectTick;
 float front[LED_COUNT];
@@ -148,6 +151,15 @@ uint32_t adcResult;
  0x09, 0xe9,                    //   USAGE (Volume Up)
  0x09, 0xea,                    //   USAGE (Volume Down)
  */
+
+int _write(int file, char *ptr, int len) {
+
+	int i = 0;
+	for (i = 0; i < len; i++)
+		ITM_SendChar((*ptr++));
+	return len;
+}
+
 static void hid_send_stop() {
 	HID_Buffer[0] = 0;
 	HID_Buffer[1] = 0;
@@ -312,112 +324,109 @@ int main(void)
 
 	ws2812_init();
 	for (int t = 0; t < LED_COUNT; t++) {
-			float val = sin((float) (6.28 / LED_COUNT) * (float) t);
-			if (val > 0) {
-				front[t] = val;
-			}
+		float val = sin((float) (6.28 / LED_COUNT) * (float) t);
+		if (val > 0) {
+			front[t] = val;
 		}
+	}
 
-		RgbColor RGB;
-		RGB.r=0;
-		RGB.g=0;
-		RGB.b=MAX_BRIGHT;
-		HsvColor HSV;
-		HSV.h = 0;
-		HSV.s = 255;
-		HSV.v = MAX_BRIGHT;
+	RgbColor RGB;
+	RGB.r = 0;
+	RGB.g = 0;
+	RGB.b = MAX_BRIGHT;
+	HsvColor HSV;
+	HSV.h = 0;
+	HSV.s = 255;
+	HSV.v = MAX_BRIGHT;
 
+
+	init();
 	//HAL_Delay(1000);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_Delay(5);
+		HAL_Delay(5);
 
-	  		HAL_ADC_Start(&hadc1);
-	  		HAL_ADC_PollForConversion(&hadc1, 1000);
-	  		adcResult = HAL_ADC_GetValue(&hadc1);
-	  		HAL_ADC_Stop(&hadc1);
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, 1000);
+		adcResult = HAL_ADC_GetValue(&hadc1);
+		HAL_ADC_Stop(&hadc1);
 
-	  		//________CALC_MAGNITUDE_________________________
-	  		a = 0.99 * a + 0.01 * adcResult;
-	  		b = 0.9 * b + 0.1 * adcResult;
-	  		d = a - b;
-	  		if (d > MAG_VAL) {
-	  			phoneUp = 0;
-	  		} else if (d < -MAG_VAL) {
-	  			phoneUp = 1;
-	  		}
+		//________CALC_MAGNITUDE_________________________
+		a = 0.99 * a + 0.01 * adcResult;
+		b = 0.9 * b + 0.1 * adcResult;
+		d = a - b;
+		if (d > MAG_VAL) {
+			phoneUp = 0;
+		} else if (d < -MAG_VAL) {
+			phoneUp = 1;
+		}
 
-	  		/*
-	  		if (a > MAG_VAL_MAX || a < MAG_VAL_MIN) {
-	  			phoneUp = 0;
-	  		} else if (a < MAG_VAL_MAX || a > MAG_VAL_MIN) {
-	  			phoneUp = 1;
-	  		}
-	  		*/
+		/*
+		 if (a > MAG_VAL_MAX || a < MAG_VAL_MIN) {
+		 phoneUp = 0;
+		 } else if (a < MAG_VAL_MAX || a > MAG_VAL_MIN) {
+		 phoneUp = 1;
+		 }
+		 */
 
-	  		//___________________HID_Sender____________
-	  		if (phoneUp != phoneUp_) {
-	  			if (phoneUp) {
-	  				hid_send_start();
+		//___________________HID_Sender____________
+		if (phoneUp != phoneUp_) {
+			if (phoneUp) {
+				hid_send_start();
 
-	  			} else {
-	  				hid_send_stop();
+			} else {
+				hid_send_stop();
 
-	  			}
-	  		}
-	  		phoneUp_ = phoneUp;
+			}
+		}
+		phoneUp_ = phoneUp;
 
+		if (ledRefresh) {
+			//______________________________led_effect______________________
+			/*
+			 if (HSV.h < 255) {
+			 HSV.h++;
+			 } else {
+			 HSV.h = 0;
+			 }
+			 RGB = HsvToRgb(HSV);
+			 */
 
+			ledRefresh = 0;
+			if (phoneUp) {
+				for (int i = 0; i < LED_COUNT; i++) {
+					ws2812_setPixel_gammaCorrection(RGB.r * front[i],
+							RGB.g * front[i], RGB.b * front[i], i);
+					//ws2812_pixel_rgb_to_buf_dma(RGB.r * front[i], RGB.g * front[i],RGB.b * front[i], i);
+				}
+				ws2812_light();
+				//HAL_Delay(40);
 
+				//shift front
+				float tmp = front[0];
+				for (int t = 0; t < (LED_COUNT - 1); t++) {
+					front[t] = front[t + 1];
+				}
+				front[LED_COUNT - 1] = tmp;
+			} else {
+				for (int i = 0; i < LED_COUNT; i++) {
+					ws2812_setPixel_gammaCorrection(RGB.r, RGB.g, RGB.b, i);
+					//ws2812_pixel_rgb_to_buf_dma(RGB.r, RGB.g ,RGB.b , i);
+				}
+				ws2812_light();
+				//HAL_Delay(40);
 
-	  		if (ledRefresh) {
-	  			//______________________________led_effect______________________
-	  			/*
-	  			if (HSV.h < 255) {
-	  				HSV.h++;
-	  			} else {
-	  				HSV.h = 0;
-	  			}
-	  			RGB = HsvToRgb(HSV);
-	  			*/
+			}
 
-
-	  			ledRefresh=0;
-	  			if (phoneUp) {
-	  				for (int i = 0; i < LED_COUNT; i++) {
-	  					ws2812_setPixel_gammaCorrection(RGB.r * front[i],
-	  							RGB.g * front[i], RGB.b * front[i], i);
-	  					//ws2812_pixel_rgb_to_buf_dma(RGB.r * front[i], RGB.g * front[i],RGB.b * front[i], i);
-	  				}
-	  				ws2812_light();
-	  				//HAL_Delay(40);
-
-	  				//shift front
-	  				float tmp = front[0];
-	  				for (int t = 0; t < (LED_COUNT - 1); t++) {
-	  					front[t] = front[t + 1];
-	  				}
-	  				front[LED_COUNT - 1] = tmp;
-	  			} else {
-	  				for (int i = 0; i < LED_COUNT; i++) {
-	  					ws2812_setPixel_gammaCorrection(RGB.r, RGB.g, RGB.b, i);
-	  					//ws2812_pixel_rgb_to_buf_dma(RGB.r, RGB.g ,RGB.b , i);
-	  				}
-	  				ws2812_light();
-	  				//HAL_Delay(40);
-
-	  			}
-
-	  		}
-	  	}
+		}
+	}
   /* USER CODE END 3 */
 }
 
@@ -443,9 +452,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 250;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV6;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
+  RCC_OscInitStruct.PLL.PLLN = 125;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -459,13 +468,13 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S;
   PeriphClkInitStruct.PLLI2S.PLLI2SN = 192;
-  PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+  PeriphClkInitStruct.PLLI2S.PLLI2SR = 4;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -577,7 +586,7 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 8;
   /* USER CODE BEGIN SDIO_Init 2 */
 
   /* USER CODE END SDIO_Init 2 */
@@ -723,11 +732,13 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s2) {
-	if (hi2s2->Instance == I2S2) {
-		AudioPlay_TransferComplete_CallBack();
-	}
-}
+/*
+ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s2) {
+ if (hi2s2->Instance == I2S2) {
+ AudioPlay_TransferComplete_CallBack();
+ }
+ }
+ */
 //---------------------------------------------------------
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s2) {
 	if (hi2s2->Instance == I2S2) {

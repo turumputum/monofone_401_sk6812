@@ -39,6 +39,7 @@
 "Src/fatfs.o"
 "Src/fatfs_platform.o"
 "Src/main.o"
+"Src/player.o"
 "Src/sd_diskio.o"
 "Src/stm32f4xx_hal_msp.o"
 "Src/stm32f4xx_it.o"
